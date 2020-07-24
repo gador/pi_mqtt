@@ -35,7 +35,11 @@ def get_memory_usage():
     return str(psutil.virtual_memory().percent)
 
 def get_cpu_usage():
-    return str(psutil.cpu_percent(interval=None))
+    return str(psutil.cpu_percent())
+
+def get_load():
+    load = str(psutil.getloadavg())
+    return(findall(r"\d+\.\d+",load)[0]) # get first load average return value
 
 def init_client():
     client = paho.Client(MQTT_CLIENT)
@@ -48,7 +52,8 @@ def publish_message(client, topic, message):
 
 client = init_client()
 
-publish_message(client, MQTT_TOPIC + 'temp', '45')
+publish_message(client, MQTT_TOPIC + 'temp', get_temp())
 publish_message(client, MQTT_TOPIC + 'disk', get_disk_usage())
 publish_message(client, MQTT_TOPIC + 'memory', get_memory_usage())
 publish_message(client, MQTT_TOPIC + 'cpu', get_cpu_usage())
+publish_message(client, MQTT_TOPIC + 'load', get_load())
