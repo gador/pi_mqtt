@@ -48,7 +48,7 @@ def init_client():
     return client
 
 def publish_message(client, topic, message):
-    client.publish(topic, message) 
+    client.publish(topic, message, 1)
 
 client = init_client()
 
