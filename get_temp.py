@@ -3,16 +3,22 @@ from subprocess import check_output
 from re import findall
 import paho.mqtt.client as paho
 import configparser
+import psutil
 import sys
 
 
 config = configparser.ConfigParser()
 config.read('pi_mqtt.conf')
 
-MQTT_USER = config['DEFAULT']['user']
-MQTT_PW = config['DEFAULT']['password']
-MQTT_BROKER = config['DEFAULT']['host']
-MQTT_TOPIC = config['DEFAULT']['topic']
+if config.has_section('CONFIG'):
+    MQTT_USER = config['CONFIG']['user']
+    MQTT_PW = config['CONFIG']['password']
+    MQTT_BROKER = config['CONFIG']['host']
+    MQTT_TOPIC = config['CONFIG']['topic']
+    MQTT_CLIENT = config['CONFIG']['client']
+else:
+    print("No 'CONFIG' section in config file supplied or no pi_mqtt.conf file found")
+    sys.exit(1)
 
 def get_temp():
     try:
@@ -20,20 +26,29 @@ def get_temp():
     except FileNotFoundError:
         print("Please install vcgencmd.")
         sys.exit(1)
-    return(findall("\d+\.\d+",temp)[0])
+    return(findall(r"\d+\.\d+",temp)[0])
 
+def get_disk_usage():
+    return str(psutil.disk_usage('/').percent)
 
-def publish_message(topic, message):
+def get_memory_usage():
+    return str(psutil.virtual_memory().percent)
 
-    def on_publish(client,userdata,result):
-        print("data published \n")
-        pass
-    client1 = paho.Client("control1")
-    client1.on_publish = on_publish
-    client1.username_pw_set(MQTT_USER, MQTT_PW)
-    client1.connect(MQTT_BROKER,1883)
-    client1.publish(topic, message) 
+def get_cpu_usage():
+    return str(psutil.cpu_percent(interval=None))
 
-temp = get_temp()
-# temp = 45 for debugging
-publish_message(MQTT_TOPIC, temp)
+def init_client():
+    client = paho.Client(MQTT_CLIENT)
+    client.username_pw_set(MQTT_USER, MQTT_PW)
+    client.connect(MQTT_BROKER,1883)
+    return client
+
+def publish_message(client, topic, message):
+    client.publish(topic, message) 
+
+client = init_client()
+
+publish_message(client, MQTT_TOPIC + 'temp', '45')
+publish_message(client, MQTT_TOPIC + 'disk', get_disk_usage())
+publish_message(client, MQTT_TOPIC + 'memory', get_memory_usage())
+publish_message(client, MQTT_TOPIC + 'cpu', get_cpu_usage())
