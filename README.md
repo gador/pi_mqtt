@@ -7,6 +7,7 @@ Small script to read temperature and other stats of a raspberry pi and publish i
 - python3
 - python3-paho-mqtt
 - python3-configparser
+- python3-psutil (>5.6.2)
 - vcgencmd
 
 ## example config file layout
